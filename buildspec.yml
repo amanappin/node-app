@@ -1,28 +1,29 @@
 version: 0.2
 
-
 phases:
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
       - aws --version
-      - aws ecr get-login-password --region us-west-1 | docker login --username AWS --password-stdin 467487045317.dkr.ecr.us-west-1.amazonaws.com
-      - REPOSITORY_URI=467487045317.dkr.ecr.us-west-1.amazonaws.com/repo
+      - sudo chmod 666 /var/run/docker.sock
+      - sudo chmod 666 /var/run/docker.sock
+      - aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 827494473000.dkr.ecr.ap-south-1.amazonaws.com
+      - REPOSITORY_URI=827494473000.dkr.ecr.ap-south-1.amazonaws.com/node-app
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - IMAGE_TAG=build-$(echo $CODEBUILD_BUILD_ID | awk -F":" '{print $2}')
   build:
     commands:
       - echo Build started on `date`
       - echo Building the Docker image...
-      - docker build -t nodeapp .
-      - docker tag nodeapp:latest 467487045317.dkr.ecr.us-west-1.amazonaws.com/repo:latest
+      - docker build -t node-app .
+      - docker tag node-app:latest 827494473000.dkr.ecr.ap-south-1.amazonaws.com/node-app:latest
   post_build:
     commands:
       - echo Build completed on `date`
       - echo Pushing the Docker images...
-      - docker push 467487045317.dkr.ecr.us-west-1.amazonaws.com/repo:latest
+      - docker push 827494473000.dkr.ecr.ap-south-1.amazonaws.com/node-app
       - echo Writing image definitions file...
-      - printf '[{"name":"nodeapp","imageUri":"%s"}]' 467487045317.dkr.ecr.us-west-1.amazonaws.com/repo:latest > imagedefinitions.json
-      - cat imagedefinitions.json 
+      - printf '[{"name":"nodeapp","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+      - cat imagedefinitions.json
 artifacts:
     files: imagedefinitions.json
